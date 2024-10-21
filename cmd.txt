@@ -1,0 +1,8 @@
+push command:
+git add -A 
+git commit -m "Updated" 
+git push 
+
+
+fetching from the git. 
+git pull

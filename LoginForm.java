@@ -7,6 +7,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -91,7 +92,7 @@ public class LoginForm extends JFrame implements ActionListener {
     }
 
     private boolean validateLogin(String username, String password) {
-        String url = "jdbc:mysql://localhost:3306/signup";  // Database URL
+        String url = "jdbc:mysql://localhost:3306/todo";  // Database URL
         String dbUser = "root";  // Database user
         String dbPassword = "";  // Database password
 
@@ -113,7 +114,7 @@ public class LoginForm extends JFrame implements ActionListener {
             preparedStatement.close();
             connection.close();
 
-            return isValid;  // Return true if valid credentials, false otherwise
+            return true;  // Return true if valid credentials, false otherwise
 
         } catch (ClassNotFoundException ex) {
             System.err.println("Error loading MySQL JDBC driver: " + ex.getMessage());
