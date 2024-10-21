@@ -12,8 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Arrays;
 
-
-
 public class ToDoListDashboard extends JFrame {
     private JTable taskTable;
     private DefaultTableModel taskTableModel;
@@ -106,11 +104,11 @@ public class ToDoListDashboard extends JFrame {
         // Load tasks from the database
         loadTasks();
 
-        // Add checkbox listener to toggle completion
+        // Single click listener to toggle task completion
         taskTable.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 int row = taskTable.getSelectedRow();
-                if (row >= 0 && evt.getClickCount() == 2) { // Double-click to toggle completion
+                if (row >= 0 && evt.getClickCount() == 1) { // Single click to toggle completion
                     boolean currentValue = (boolean) taskTableModel.getValueAt(row, 0);
                     taskTableModel.setValueAt(!currentValue, row, 0); // Toggle checkbox
 
@@ -130,41 +128,41 @@ public class ToDoListDashboard extends JFrame {
             String query = "SELECT * FROM Task";
             PreparedStatement stmt = conn.prepareStatement(query);
             ResultSet rs = stmt.executeQuery();
-    
+
             // Store tasks in a list for sorting
             List<Task> tasks = new ArrayList<>();
-    
+
             while (rs.next()) {
                 String taskName = rs.getString("task_name");
                 String priority = rs.getString("priority");
                 String createTime = rs.getString("create_time");
                 String endTime = rs.getString("end_time");
                 boolean completed = rs.getBoolean("completed");
-    
+
                 // Add the task to the list
                 tasks.add(new Task(taskName, priority, createTime, endTime, completed));
             }
-    
-            // Sort tasks to place completed tasks below incomplete tasks
+
+            // Sort tasks
             Collections.sort(tasks, (t1, t2) -> {
                 if (t1.isCompleted() && !t2.isCompleted()) return 1; // t1 comes after t2
                 if (!t1.isCompleted() && t2.isCompleted()) return -1; // t1 comes before t2
-    
-                // Sort by priority
+
+                // If both are incomplete or completed, sort by priority and end time
                 int priorityComparison = comparePriority(t1.getPriority(), t2.getPriority());
                 if (priorityComparison != 0) return priorityComparison;
-    
-                // Sort by end time
+
+                // If priorities are equal, sort by end time
                 return t1.getEndTime().compareTo(t2.getEndTime());
             });
-    
+
             // Add sorted tasks to the table model
             for (Task task : tasks) {
                 taskTableModel.addRow(new Object[]{
-                    task.isCompleted(),
-                    task.getTaskName(),
-                    task.getPriority(),
-                    task.getCreateTime(),
+                    task.isCompleted(), 
+                    task.getTaskName(), 
+                    task.getPriority(), 
+                    task.getCreateTime(), 
                     task.isCompleted() ? "" : task.getEndTime()
                 });
             }
@@ -172,19 +170,17 @@ public class ToDoListDashboard extends JFrame {
             e.printStackTrace();
         }
     }
-    
-    
+
     private int comparePriority(String priority1, String priority2) {
         String[] priorities = {"High", "Medium", "Low"};
         int index1 = Arrays.asList(priorities).indexOf(priority1);
         int index2 = Arrays.asList(priorities).indexOf(priority2);
         return Integer.compare(index1, index2);
     }
-    
 
     private void updateTaskCompletion(int row, boolean completed) {
         String taskName = (String) taskTableModel.getValueAt(row, 1); // Get task name
-
+    
         // Update the database for this task
         try (Connection conn = DatabaseConnection.getConnection()) {
             String updateQuery = "UPDATE Task SET completed = ? WHERE task_name = ?";
@@ -197,8 +193,13 @@ public class ToDoListDashboard extends JFrame {
             e.printStackTrace();
             System.out.println("Failed to update task completion status");
         }
-        loadTasks(); // Reload tasks to reflect changes
+    
+        // Instead of reloading all tasks, just update the row directly in the table model
+        taskTableModel.setValueAt(completed, row, 0); // Update the checkbox
+        // Optionally, update the display properties (like strikethrough) by calling prepareRenderer again
+        taskTable.repaint(); // Repaint the table to reflect changes
     }
+    
 
     private void deleteSelectedTask() {
         int row = taskTable.getSelectedRow();
@@ -212,12 +213,11 @@ public class ToDoListDashboard extends JFrame {
                 pstmt.setString(1, taskName); // Assuming task name is unique
                 pstmt.executeUpdate();
                 System.out.println("Task deleted successfully");
+                taskTableModel.removeRow(row); // Remove from table model
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.out.println("Failed to delete task");
             }
-
-            loadTasks(); // Reload tasks to reflect changes
         } else {
             JOptionPane.showMessageDialog(this, "Please select a task to delete.");
         }
@@ -230,7 +230,7 @@ public class ToDoListDashboard extends JFrame {
             String priority = (String) taskTableModel.getValueAt(row, 2);
             String endTime = (String) taskTableModel.getValueAt(row, 4);
             Date endDate = null;
-    
+
             // Parse endTime string to Date object if it is not empty
             if (!endTime.isEmpty()) {
                 try {
@@ -239,34 +239,16 @@ public class ToDoListDashboard extends JFrame {
                     e.printStackTrace();
                 }
             }
-            
+
+            // Open the edit task frame
             new EditTaskFrame(this, taskName, priority, endDate); // Pass all required parameters
         } else {
             JOptionPane.showMessageDialog(this, "Please select a task to edit.");
         }
     }
-    
-
-    public void addTask(String taskName, String priority, String endTime) {
-        // Add task to the database
-        try (Connection conn = DatabaseConnection.getConnection()) {
-            String insertQuery = "INSERT INTO Task (task_name, priority, create_time, end_time, completed) VALUES (?, ?, ?, ?, ?)";
-            PreparedStatement pstmt = conn.prepareStatement(insertQuery);
-            pstmt.setString(1, taskName);
-            pstmt.setString(2, priority);
-            pstmt.setString(3, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())); // Current time
-            pstmt.setString(4, endTime);
-            pstmt.setBoolean(5, false); // Default to not completed
-            pstmt.executeUpdate();
-            System.out.println("Task added successfully");
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.out.println("Failed to add task");
-        }
-        loadTasks(); // Reload tasks to reflect new addition
-    }
 
     public static void main(String[] args) {
         new ToDoListDashboard();
     }
+
 }
