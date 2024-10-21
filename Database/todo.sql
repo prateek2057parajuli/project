@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 21, 2024 at 03:33 PM
+-- Generation Time: Oct 21, 2024 at 06:22 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -28,21 +28,35 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `Task` (
-  `id` int(11) NOT NULL,
+  `task_id` int(11) NOT NULL,
+  `user_id` int(11) DEFAULT NULL,
   `task_name` varchar(255) NOT NULL,
-  `priority` varchar(10) NOT NULL,
-  `create_time` datetime NOT NULL,
-  `end_time` datetime NOT NULL
+  `priority` varchar(20) NOT NULL,
+  `create_time` timestamp NOT NULL DEFAULT current_timestamp(),
+  `end_time` datetime DEFAULT NULL,
+  `completed` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `Task`
+--
+
+INSERT INTO `Task` (`task_id`, `user_id`, `task_name`, `priority`, `create_time`, `end_time`, `completed`) VALUES
+(1, 1, 'Task One', 'Medium', '2024-10-21 16:15:42', '2024-10-21 22:00:36', 1),
+(2, 1, 'Task Two', 'Low', '2024-10-21 16:15:50', '2024-10-21 22:00:45', 1),
+(3, 1, 'task 3', 'High', '2024-10-21 16:16:05', '2024-10-21 22:01:01', 1),
+(4, 2, 'asdfasdf', 'High', '2024-10-21 16:17:59', '2024-10-21 22:02:57', 1),
+(5, 2, 'asdfasdfasf', 'High', '2024-10-21 16:18:02', '2024-10-21 22:03:01', 0),
+(6, 2, 'sdfasdfasdfasdf', 'High', '2024-10-21 16:18:05', '2024-10-21 22:03:04', 1);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `users`
+-- Table structure for table `Users`
 --
 
-CREATE TABLE `users` (
-  `id` int(11) NOT NULL,
+CREATE TABLE `Users` (
+  `user_id` int(11) NOT NULL,
   `username` varchar(50) NOT NULL,
   `password` varchar(255) NOT NULL,
   `email` varchar(100) NOT NULL,
@@ -50,15 +64,12 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `users`
+-- Dumping data for table `Users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `email`, `created_at`) VALUES
-(1, 'santoshvandari1', 'Santoshvandari1@1', 'santoshvanari@gmail.com', '2024-10-21 11:20:40'),
-(3, 'fasdf', 'asdfasdqrewrasfsdaf2!S', 'sdfsd@gmail.com', '2024-10-21 11:21:53'),
-(4, 'temp', 'Temporary1@1', 'temp@gmail.com', '2024-10-21 11:29:15'),
-(5, 'san', 'Santosh1@1', 'santosh@gmail.com', '2024-10-21 11:35:46'),
-(6, 'santoshvandari', 'Santosh1@1', 'santoshvandari@gmail.com', '2024-10-21 12:58:33');
+INSERT INTO `Users` (`user_id`, `username`, `password`, `email`, `created_at`) VALUES
+(1, 'santoshvandari', 'Santosh1@1', 'santosh@gmail.com', '2024-10-21 16:13:18'),
+(2, 'temp', 'Temporary1@', 'temp@gmail.com', '2024-10-21 16:15:23');
 
 --
 -- Indexes for dumped tables
@@ -68,14 +79,16 @@ INSERT INTO `users` (`id`, `username`, `password`, `email`, `created_at`) VALUES
 -- Indexes for table `Task`
 --
 ALTER TABLE `Task`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`task_id`),
+  ADD KEY `user_id` (`user_id`);
 
 --
--- Indexes for table `users`
+-- Indexes for table `Users`
 --
-ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `username` (`username`);
+ALTER TABLE `Users`
+  ADD PRIMARY KEY (`user_id`),
+  ADD UNIQUE KEY `username` (`username`),
+  ADD UNIQUE KEY `email` (`email`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -85,13 +98,23 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `Task`
 --
 ALTER TABLE `Task`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `task_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
--- AUTO_INCREMENT for table `users`
+-- AUTO_INCREMENT for table `Users`
 --
-ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+ALTER TABLE `Users`
+  MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `Task`
+--
+ALTER TABLE `Task`
+  ADD CONSTRAINT `Task_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `Users` (`user_id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
