@@ -1,4 +1,5 @@
 package Auth;
+
 import Database.DatabaseConnection;
 import java.awt.*;
 import java.awt.event.*;
@@ -128,7 +129,12 @@ public class SignupForm extends JFrame implements ActionListener {
             String email = emailField.getText();
 
             if (validateInput(username, password, email)) {
-                saveUserToDatabase(username, password, email);
+                // Check if username is unique
+                if (isUsernameUnique(username)) {
+                    saveUserToDatabase(username, password, email);
+                } else {
+                    JOptionPane.showMessageDialog(this, "Username already exists!", "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         } else if (e.getSource() == loginButton) {
             new LoginForm(); // Assuming you have a LoginForm class
@@ -167,50 +173,70 @@ public class SignupForm extends JFrame implements ActionListener {
         return true;
     }
 
-    // Password validation: minimum 8 characters, at least 1 uppercase, 1 digit, 1 special character
     private boolean isValidPassword(String password) {
         String regex = "^(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
         return password.matches(regex);
     }
 
-    // Email validation using regex
     private boolean isValidEmail(String email) {
         String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
         return email.matches(emailRegex);
     }
 
-    private void saveUserToDatabase(String username, String password, String email) {
+    private boolean isUsernameUnique(String username) {
         try {
-            // Establish a connection
             DatabaseConnection db = new DatabaseConnection();
             Connection connection = db.getConnection();
+            String query = "SELECT * FROM users WHERE username = ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, username);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            boolean isUnique = !resultSet.next(); // If no record is found, username is unique
 
-            // Prepare SQL insert query
+            // Clean up
+            resultSet.close();
+            preparedStatement.close();
+            connection.close();
+
+            return isUnique;
+        } catch (Exception ex) {
+            System.err.println("Database Error: " + ex.getMessage());
+            return false;
+        }
+    }
+
+    private void saveUserToDatabase(String username, String password, String email) {
+        try {
+            DatabaseConnection db = new DatabaseConnection();
+            Connection connection = db.getConnection();
             String query = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setString(1, username);
             preparedStatement.setString(2, password);
             preparedStatement.setString(3, email);
 
-            // Execute the query
-            int rowAffected = preparedStatement.executeUpdate();
-
-            if (rowAffected > 0) {
-                JOptionPane.showMessageDialog(this, "Signup Successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                new LoginForm(); // Assuming you have a LoginForm class
-                dispose(); // Close the signup form
-            } else {
-                JOptionPane.showMessageDialog(this, "Signup Failed!", "Error", JOptionPane.ERROR_MESSAGE);
+            int rowsInserted = preparedStatement.executeUpdate();
+            if (rowsInserted > 0) {
+                JOptionPane.showMessageDialog(this, "User registered successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                clearForm(); // Clear the fields after successful registration
             }
 
-            // Close resources
+            // Clean up
             preparedStatement.close();
             connection.close();
-
         } catch (Exception ex) {
-            System.out.println("Database Error: " + ex.getMessage());
-            JOptionPane.showMessageDialog(this, "Database Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            System.err.println("Database Error: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Failed to register user", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    private void clearForm() {
+        nameField.setText("");
+        passwordField.setText("");
+        emailField.setText("");
+    }
+
+    public static void main(String[] args) {
+        new SignupForm();
+    }
 }
