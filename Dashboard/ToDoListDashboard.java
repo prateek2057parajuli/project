@@ -130,41 +130,41 @@ public class ToDoListDashboard extends JFrame {
             String query = "SELECT * FROM Task";
             PreparedStatement stmt = conn.prepareStatement(query);
             ResultSet rs = stmt.executeQuery();
-
+    
             // Store tasks in a list for sorting
             List<Task> tasks = new ArrayList<>();
-
+    
             while (rs.next()) {
                 String taskName = rs.getString("task_name");
                 String priority = rs.getString("priority");
                 String createTime = rs.getString("create_time");
                 String endTime = rs.getString("end_time");
                 boolean completed = rs.getBoolean("completed");
-
+    
                 // Add the task to the list
                 tasks.add(new Task(taskName, priority, createTime, endTime, completed));
             }
-
-            // Sort tasks
+    
+            // Sort tasks to place completed tasks below incomplete tasks
             Collections.sort(tasks, (t1, t2) -> {
                 if (t1.isCompleted() && !t2.isCompleted()) return 1; // t1 comes after t2
                 if (!t1.isCompleted() && t2.isCompleted()) return -1; // t1 comes before t2
-
-                // If both are incomplete or completed, sort by priority and end time
+    
+                // Sort by priority
                 int priorityComparison = comparePriority(t1.getPriority(), t2.getPriority());
                 if (priorityComparison != 0) return priorityComparison;
-
-                // If priorities are equal, sort by end time
+    
+                // Sort by end time
                 return t1.getEndTime().compareTo(t2.getEndTime());
             });
-
+    
             // Add sorted tasks to the table model
             for (Task task : tasks) {
                 taskTableModel.addRow(new Object[]{
-                    task.isCompleted(), 
-                    task.getTaskName(), 
-                    task.getPriority(), 
-                    task.getCreateTime(), 
+                    task.isCompleted(),
+                    task.getTaskName(),
+                    task.getPriority(),
+                    task.getCreateTime(),
                     task.isCompleted() ? "" : task.getEndTime()
                 });
             }
@@ -172,6 +172,7 @@ public class ToDoListDashboard extends JFrame {
             e.printStackTrace();
         }
     }
+    
     
     private int comparePriority(String priority1, String priority2) {
         String[] priorities = {"High", "Medium", "Low"};
