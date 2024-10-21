@@ -180,7 +180,7 @@ public class ToDoListDashboard extends JFrame {
 
     private void updateTaskCompletion(int row, boolean completed) {
         String taskName = (String) taskTableModel.getValueAt(row, 1); // Get task name
-    
+
         // Update the database for this task
         try (Connection conn = DatabaseConnection.getConnection()) {
             String updateQuery = "UPDATE Task SET completed = ? WHERE task_name = ?";
@@ -193,13 +193,8 @@ public class ToDoListDashboard extends JFrame {
             e.printStackTrace();
             System.out.println("Failed to update task completion status");
         }
-    
-        // Instead of reloading all tasks, just update the row directly in the table model
-        taskTableModel.setValueAt(completed, row, 0); // Update the checkbox
-        // Optionally, update the display properties (like strikethrough) by calling prepareRenderer again
-        taskTable.repaint(); // Repaint the table to reflect changes
+        loadTasks(); // Reload tasks to reflect changes
     }
-    
 
     private void deleteSelectedTask() {
         int row = taskTable.getSelectedRow();
@@ -246,9 +241,4 @@ public class ToDoListDashboard extends JFrame {
             JOptionPane.showMessageDialog(this, "Please select a task to edit.");
         }
     }
-
-    public static void main(String[] args) {
-        new ToDoListDashboard();
-    }
-
 }
