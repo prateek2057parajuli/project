@@ -1,10 +1,12 @@
 package Dashboard;
-
 import Database.DatabaseConnection;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.sql.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 public class ToDoListDashboard extends JFrame {
     private JTable taskTable;
@@ -167,7 +169,18 @@ public class ToDoListDashboard extends JFrame {
         if (row >= 0) {
             String taskName = (String) taskTableModel.getValueAt(row, 1);
             String priority = (String) taskTableModel.getValueAt(row, 2);
-            String endTime = (String) taskTableModel.getValueAt(row, 4);
+            String endTimeString = (String) taskTableModel.getValueAt(row, 4);
+
+            // Convert endTimeString to Date
+            Date endTime = null;
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            try {
+                if (!endTimeString.isEmpty()) { // Check if endTimeString is not empty
+                    endTime = sdf.parse(endTimeString);
+                }
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
 
             // Open edit dialog
             EditTaskFrame editFrame = new EditTaskFrame(this, taskName, priority, endTime);
