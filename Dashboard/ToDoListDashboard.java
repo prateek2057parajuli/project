@@ -207,6 +207,7 @@ public class ToDoListDashboard extends JFrame {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        loadTasks();
     }
 
     private void deleteSelectedTask() {
@@ -224,9 +225,10 @@ public class ToDoListDashboard extends JFrame {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-
+            
             // Remove from the table
             taskTableModel.removeRow(selectedRow);
+            loadTasks(); // Reload the task list
         } else {
             JOptionPane.showMessageDialog(this, "Please select a task to delete.", "No Task Selected", JOptionPane.WARNING_MESSAGE);
         }
@@ -236,11 +238,27 @@ public class ToDoListDashboard extends JFrame {
         int selectedRow = taskTable.getSelectedRow();
         if (selectedRow >= 0) {
             String taskName = (String) taskTableModel.getValueAt(selectedRow, 1);
-            new EditTaskFrame(this, taskName, userId); // Pass task name and user ID
+            String priority = (String) taskTableModel.getValueAt(selectedRow, 2);
+            String endTimeStr = (String) taskTableModel.getValueAt(selectedRow, 4);
+            
+            // Parse end time to Date
+            Date endTime = null;
+            if (!endTimeStr.isEmpty()) {
+                try {
+                    endTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(endTimeStr);
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error parsing end time", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            }
+    
+            new EditTaskFrame(this, taskName, priority, endTime); // Pass task name, priority, and end time
         } else {
             JOptionPane.showMessageDialog(this, "Please select a task to edit.", "No Task Selected", JOptionPane.WARNING_MESSAGE);
         }
     }
+    
 
     private void logout() {
         // Clear user session and return to login screen

@@ -144,29 +144,31 @@ public class LoginForm extends JFrame implements ActionListener {
     private int authenticateUser(String username, String password) {
         try {
             Connection connection = DatabaseConnection.getConnection();
-            String query = "SELECT id FROM users WHERE username = ? AND password = ?";
+            // Change 'id' to 'user_id' in the query
+            String query = "SELECT user_id FROM Users WHERE username = ? AND password = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setString(1, username);
             preparedStatement.setString(2, password);
             ResultSet resultSet = preparedStatement.executeQuery();
-
+    
             // Get user ID if authenticated
             int userId = -1;
             if (resultSet.next()) {
-                userId = resultSet.getInt("id");
+                userId = resultSet.getInt("user_id"); // Change 'id' to 'user_id'
             }
-
+    
             // Clean up
             resultSet.close();
             preparedStatement.close();
             connection.close();
-
+    
             return userId; // Return user ID if authenticated, else -1
         } catch (Exception ex) {
             System.err.println("Database Error: " + ex.getMessage());
             return -1; // Return -1 for any database error or failed authentication
         }
     }
+    
 
     public static void main(String[] args) {
         new LoginForm();
