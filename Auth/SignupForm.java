@@ -70,15 +70,7 @@ public class SignupForm extends JFrame implements ActionListener {
         showPasswordCheckBox.setSize(150, 30);
         showPasswordCheckBox.setLocation(180, 185);
         showPasswordCheckBox.setBackground(new Color(224, 224, 224)); // Match background color
-        showPasswordCheckBox.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (showPasswordCheckBox.isSelected()) {
-                    passwordField.setEchoChar((char) 0); // Show password
-                } else {
-                    passwordField.setEchoChar('*'); // Hide password
-                }
-            }
-        });
+        showPasswordCheckBox.addActionListener(e -> passwordField.setEchoChar(showPasswordCheckBox.isSelected() ? (char) 0 : '*'));
         container.add(showPasswordCheckBox);
 
         emailLabel = new JLabel("Email:");
@@ -98,11 +90,11 @@ public class SignupForm extends JFrame implements ActionListener {
         signupButton = new JButton("Signup");
         signupButton.setFont(new Font("Verdana", Font.BOLD, 15));
         signupButton.setSize(120, 35);
-        signupButton.setLocation(120, 300);
-        signupButton.setBackground(new Color(41, 121, 255)); // Blue color
+        signupButton.setLocation(120, 290);
+        signupButton.setBackground(new Color(76, 175, 80)); // Green color
         signupButton.setForeground(Color.WHITE); // White text
-        signupButton.setBorder(new LineBorder(new Color(33, 150, 243), 2));
-        signupButton.setFocusPainted(false); // Removes focus outline
+        signupButton.setBorder(new LineBorder(new Color(67, 160, 71), 2));
+        signupButton.setFocusPainted(false);
         signupButton.addActionListener(this);
         container.add(signupButton);
 
@@ -110,10 +102,10 @@ public class SignupForm extends JFrame implements ActionListener {
         loginButton = new JButton("Login");
         loginButton.setFont(new Font("Verdana", Font.BOLD, 15));
         loginButton.setSize(120, 35);
-        loginButton.setLocation(260, 300);
-        loginButton.setBackground(new Color(76, 175, 80)); // Green color
+        loginButton.setLocation(260, 290);
+        loginButton.setBackground(new Color(41, 121, 255)); // Blue color
         loginButton.setForeground(Color.WHITE); // White text
-        loginButton.setBorder(new LineBorder(new Color(67, 160, 71), 2));
+        loginButton.setBorder(new LineBorder(new Color(33, 150, 243), 2));
         loginButton.setFocusPainted(false);
         loginButton.addActionListener(this);
         container.add(loginButton);
@@ -129,16 +121,17 @@ public class SignupForm extends JFrame implements ActionListener {
             String email = emailField.getText();
 
             if (validateInput(username, password, email)) {
-                // Check if username is unique
-                if (isUsernameUnique(username)) {
-                    saveUserToDatabase(username, password, email);
+                if (registerUser(username, password, email)) {
+                    JOptionPane.showMessageDialog(this, "Signup successful! You can now login.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    new LoginForm(); // Go back to login form
+                    dispose(); // Close signup form
                 } else {
-                    JOptionPane.showMessageDialog(this, "Username already exists!", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Signup failed. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         } else if (e.getSource() == loginButton) {
-            new LoginForm(); // Assuming you have a LoginForm class
-            dispose(); // Close the signup form
+            new LoginForm(); // Go to login form
+            dispose(); // Close signup form
         }
     }
 
@@ -147,95 +140,28 @@ public class SignupForm extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(this, "Username cannot be empty", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-        if (username.length() < 3) {
-            JOptionPane.showMessageDialog(this, "Username must be at least 3 characters long", "Validation Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-
         if (password.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Password cannot be empty", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-        if (!isValidPassword(password)) {
-            JOptionPane.showMessageDialog(this, "Password must be at least 8 characters long and include a number, a capital letter, and a special character", "Validation Error", JOptionPane.ERROR_MESSAGE);
+        if (email.isEmpty() || !email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            JOptionPane.showMessageDialog(this, "Please enter a valid email", "Validation Error", JOptionPane.ERROR_MESSAGE);
             return false;
         }
-
-        if (email.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Email cannot be empty", "Validation Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-        if (!isValidEmail(email)) {
-            JOptionPane.showMessageDialog(this, "Please enter a valid email address", "Validation Error", JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-
         return true;
     }
 
-    private boolean isValidPassword(String password) {
-        String regex = "^(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
-        return password.matches(regex);
-    }
-
-    private boolean isValidEmail(String email) {
-        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
-        return email.matches(emailRegex);
-    }
-
-    private boolean isUsernameUnique(String username) {
-        try {
-            DatabaseConnection db = new DatabaseConnection();
-            Connection connection = db.getConnection();
-            String query = "SELECT * FROM users WHERE username = ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
+    private boolean registerUser(String username, String password, String email) {
+        try (Connection connection = DatabaseConnection.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO users (username, password, email) VALUES (?, ?, ?)")) {
             preparedStatement.setString(1, username);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            boolean isUnique = !resultSet.next(); // If no record is found, username is unique
-
-            // Clean up
-            resultSet.close();
-            preparedStatement.close();
-            connection.close();
-
-            return isUnique;
+            preparedStatement.setString(2, password);
+            preparedStatement.setString(3, email);
+            return preparedStatement.executeUpdate() > 0; // Returns true if a row is inserted
         } catch (Exception ex) {
             System.err.println("Database Error: " + ex.getMessage());
             return false;
         }
-    }
-
-    private void saveUserToDatabase(String username, String password, String email) {
-        try {
-            // DatabaseConnection db = new DatabaseConnection();
-            Connection connection = DatabaseConnection.getConnection();
-            String query = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setString(1, username);
-            preparedStatement.setString(2, password);
-            preparedStatement.setString(3, email);
-
-            int rowsInserted = preparedStatement.executeUpdate();
-            if (rowsInserted > 0) {
-                JOptionPane.showMessageDialog(this, "User registered successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                clearForm(); // Clear the fields after successful registration
-                new LoginForm(); // Go to login form
-                dispose(); // Close the signup form
-            }
-
-            // Clean up
-            preparedStatement.close();
-            connection.close();
-        } catch (Exception ex) {
-            System.err.println("Database Error: " + ex.getMessage());
-            JOptionPane.showMessageDialog(this, "Failed to register user", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void clearForm() {
-        nameField.setText("");
-        passwordField.setText("");
-        emailField.setText("");
     }
 
     public static void main(String[] args) {
