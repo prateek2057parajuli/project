@@ -1,9 +1,10 @@
 package Database;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 
 public class DatabaseConnection {
-    public Connection getConnection() {
+    public static Connection getConnection() {
         String url = "jdbc:mysql://localhost:3306/todo"; // Replace with your DB name
         String user = "root";  // Your MySQL username
         String password = "";  // Your MySQL password

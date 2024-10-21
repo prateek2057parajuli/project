@@ -207,8 +207,8 @@ public class SignupForm extends JFrame implements ActionListener {
 
     private void saveUserToDatabase(String username, String password, String email) {
         try {
-            DatabaseConnection db = new DatabaseConnection();
-            Connection connection = db.getConnection();
+            // DatabaseConnection db = new DatabaseConnection();
+            Connection connection = DatabaseConnection.getConnection();
             String query = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setString(1, username);
@@ -219,6 +219,8 @@ public class SignupForm extends JFrame implements ActionListener {
             if (rowsInserted > 0) {
                 JOptionPane.showMessageDialog(this, "User registered successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 clearForm(); // Clear the fields after successful registration
+                new LoginForm(); // Go to login form
+                dispose(); // Close the signup form
             }
 
             // Clean up
