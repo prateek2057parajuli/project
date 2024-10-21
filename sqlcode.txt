@@ -1,0 +1,22 @@
+CREATE TABLE Users (
+    user_id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL, -- Store hashed passwords
+    email VARCHAR(100) NOT NULL UNIQUE, -- Add email field
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+CREATE TABLE Task (
+    task_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    task_name VARCHAR(255) NOT NULL,
+    priority VARCHAR(20) NOT NULL,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_time DATETIME,
+    completed BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES Users(user_id) ON DELETE CASCADE
+);
+
+

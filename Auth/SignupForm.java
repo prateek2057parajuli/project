@@ -153,7 +153,7 @@ public class SignupForm extends JFrame implements ActionListener {
 
     private boolean registerUser(String username, String password, String email) {
         try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO users (username, password, email) VALUES (?, ?, ?)")) {
+             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO Users (username, password, email) VALUES (?, ?, ?)")) {
             preparedStatement.setString(1, username);
             preparedStatement.setString(2, password);
             preparedStatement.setString(3, email);
