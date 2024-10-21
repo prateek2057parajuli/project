@@ -1,3 +1,6 @@
+import Database.DatabaseConnection;
+
+
 import java.awt.Container;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -14,6 +17,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
+// import 
 
 public class LoginForm extends JFrame implements ActionListener {
 
@@ -23,7 +27,7 @@ public class LoginForm extends JFrame implements ActionListener {
     private JTextField nameField;
     private JLabel passwordLabel;
     private JPasswordField passwordField;
-    private JButton loginButton;
+    private JButton loginButton, signupButton;
 
     public LoginForm() {
         setTitle("Login Form");
@@ -71,6 +75,14 @@ public class LoginForm extends JFrame implements ActionListener {
         loginButton.addActionListener(this);
         container.add(loginButton);
 
+
+        signupButton = new JButton("Signup");
+        signupButton.setFont(new Font("Arial", Font.PLAIN, 15));
+        signupButton.setSize(100, 20);
+        signupButton.setLocation(300, 200);
+        signupButton.addActionListener(this);
+        container.add(signupButton);
+
         setVisible(true);
     }
 
@@ -81,24 +93,24 @@ public class LoginForm extends JFrame implements ActionListener {
             String password = new String(passwordField.getPassword());
 
             if (validateLogin(username, password)) {
-                JOptionPane.showMessageDialog(this, "Login Successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                // JOptionPane.showMessageDialog(this, "Login Successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
                 // Proceed to the dashboard (you can open the ToDoListDashboard here)
                 new ToDoListDashboard();  // Assuming you have implemented the dashboard
                 dispose();  // Close the login form window
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid username or password", "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }else if (e.getSource() == signupButton) {
+            // Open login form
+            new SignupForm();  // Assuming you have a LoginForm class
+            dispose();  // Close the signup form
         }
     }
 
     private boolean validateLogin(String username, String password) {
-        String url = "jdbc:mysql://localhost:3306/todo";  // Database URL
-        String dbUser = "root";  // Database user
-        String dbPassword = "";  // Database password
-
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");  // Load JDBC driver
-            Connection connection = DriverManager.getConnection(url, dbUser, dbPassword);  // Establish connection
+            DatabaseConnection db = new DatabaseConnection();
+            Connection connection = db.getConnection();
 
             // Prepare a SQL query to validate username and password
             String query = "SELECT * FROM users WHERE username = ? AND password = ?";
@@ -115,11 +127,7 @@ public class LoginForm extends JFrame implements ActionListener {
             connection.close();
 
             return true;  // Return true if valid credentials, false otherwise
-
-        } catch (ClassNotFoundException ex) {
-            System.err.println("Error loading MySQL JDBC driver: " + ex.getMessage());
-            return false;
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             System.err.println("SQL error: " + ex.getMessage());
             return false;
         }
