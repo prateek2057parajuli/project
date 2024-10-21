@@ -1,21 +1,18 @@
 package Dashboard;
+
 public class Task {
-    private int id;
     private String taskName;
     private String priority;
     private String createTime;
     private String endTime;
+    private boolean completed;
 
-    public Task(int id, String taskName, String priority, String createTime, String endTime) {
-        this.id = id;
+    public Task(String taskName, String priority, String createTime, String endTime, boolean completed) {
         this.taskName = taskName;
         this.priority = priority;
         this.createTime = createTime;
         this.endTime = endTime;
-    }
-
-    public int getId() {
-        return id;
+        this.completed = completed;
     }
 
     public String getTaskName() {
@@ -32,5 +29,9 @@ public class Task {
 
     public String getEndTime() {
         return endTime;
+    }
+
+    public boolean isCompleted() {
+        return completed;
     }
 }
