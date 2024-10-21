@@ -114,10 +114,10 @@ public class LoginForm extends JFrame implements ActionListener {
             String password = new String(passwordField.getPassword());
 
             if (validateInput(username, password)) {
-                if (authenticateUser(username, password)) {
-                    // JOptionPane.showMessageDialog(this, "Login successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                    // Proceed to next screen or dashboard
-                    new ToDoListDashboard();
+                int userId = authenticateUser(username, password);
+                if (userId != -1) {
+                    // Proceed to the dashboard with the user ID
+                    new ToDoListDashboard(userId);
                     dispose(); // Close the login form
                 } else {
                     JOptionPane.showMessageDialog(this, "Invalid username or password", "Error", JOptionPane.ERROR_MESSAGE);
@@ -141,25 +141,30 @@ public class LoginForm extends JFrame implements ActionListener {
         return true;
     }
 
-    private boolean authenticateUser(String username, String password) {
+    private int authenticateUser(String username, String password) {
         try {
             Connection connection = DatabaseConnection.getConnection();
-            String query = "SELECT * FROM users WHERE username = ? AND password = ?";
+            String query = "SELECT id FROM users WHERE username = ? AND password = ?";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setString(1, username);
             preparedStatement.setString(2, password);
             ResultSet resultSet = preparedStatement.executeQuery();
-            boolean isAuthenticated = resultSet.next(); // Returns true if a record is found
+
+            // Get user ID if authenticated
+            int userId = -1;
+            if (resultSet.next()) {
+                userId = resultSet.getInt("id");
+            }
 
             // Clean up
             resultSet.close();
             preparedStatement.close();
             connection.close();
 
-            return isAuthenticated;
+            return userId; // Return user ID if authenticated, else -1
         } catch (Exception ex) {
             System.err.println("Database Error: " + ex.getMessage());
-            return false;
+            return -1; // Return -1 for any database error or failed authentication
         }
     }
 

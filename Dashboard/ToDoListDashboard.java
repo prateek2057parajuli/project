@@ -1,6 +1,7 @@
 package Dashboard;
 
 import Database.DatabaseConnection;
+import Auth.LoginForm;
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
@@ -15,8 +16,10 @@ import java.util.Arrays;
 public class ToDoListDashboard extends JFrame {
     private JTable taskTable;
     private DefaultTableModel taskTableModel;
+    private int userId; // Store the logged-in user's ID
 
-    public ToDoListDashboard() {
+    public ToDoListDashboard(int userId) {
+        this.userId = userId; // Set the user ID for this session
         setTitle("To-Do List Dashboard");
         setBounds(300, 90, 900, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -69,7 +72,7 @@ public class ToDoListDashboard extends JFrame {
         addTaskButton.setBorder(BorderFactory.createLineBorder(new Color(67, 160, 71), 2));
         addTaskButton.setFocusPainted(false);
         addTaskButton.setBounds(50, 490, 150, 40);
-        addTaskButton.addActionListener(e -> new AddTaskFrame(this));
+        addTaskButton.addActionListener(e -> new AddTaskFrame(this, userId)); // Pass user ID
         container.add(addTaskButton);
 
         // Button to delete a task
@@ -94,6 +97,17 @@ public class ToDoListDashboard extends JFrame {
         editTaskButton.addActionListener(e -> editSelectedTask());
         container.add(editTaskButton);
 
+        // Button to log out
+        JButton logoutButton = new JButton("Logout");
+        logoutButton.setFont(new Font("Arial", Font.BOLD, 14));
+        logoutButton.setBackground(new Color(244, 67, 54)); // Red color
+        logoutButton.setForeground(Color.WHITE); // White text
+        logoutButton.setBorder(BorderFactory.createLineBorder(new Color(229, 57, 53), 2));
+        logoutButton.setFocusPainted(false);
+        logoutButton.setBounds(650, 20, 150, 40);
+        logoutButton.addActionListener(e -> logout());
+        container.add(logoutButton);
+
         // Label to show the title
         JLabel titleLabel = new JLabel("Your Tasks");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
@@ -101,7 +115,7 @@ public class ToDoListDashboard extends JFrame {
         titleLabel.setForeground(new Color(33, 37, 41)); // Dark color
         container.add(titleLabel);
 
-        // Load tasks from the database
+        // Load tasks from the database for the logged-in user
         loadTasks();
 
         // Single click listener to toggle task completion
@@ -124,9 +138,10 @@ public class ToDoListDashboard extends JFrame {
     public void loadTasks() {
         taskTableModel.setRowCount(0);  // Clear table before reloading
         try (Connection conn = DatabaseConnection.getConnection()) {
-            // Select all tasks
-            String query = "SELECT * FROM Task";
+            // Select tasks for the logged-in user
+            String query = "SELECT * FROM Task WHERE user_id = ?";
             PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setInt(1, userId);
             ResultSet rs = stmt.executeQuery();
 
             // Store tasks in a list for sorting
@@ -183,62 +198,58 @@ public class ToDoListDashboard extends JFrame {
 
         // Update the database for this task
         try (Connection conn = DatabaseConnection.getConnection()) {
-            String updateQuery = "UPDATE Task SET completed = ? WHERE task_name = ?";
-            PreparedStatement pstmt = conn.prepareStatement(updateQuery);
-            pstmt.setBoolean(1, completed);
-            pstmt.setString(2, taskName); // Assuming task name is unique
-            pstmt.executeUpdate();
-            System.out.println("Task completion status updated successfully");
+            String updateQuery = "UPDATE Task SET completed = ? WHERE task_name = ? AND user_id = ?";
+            PreparedStatement stmt = conn.prepareStatement(updateQuery);
+            stmt.setBoolean(1, completed);
+            stmt.setString(2, taskName);
+            stmt.setInt(3, userId);
+            stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
-            System.out.println("Failed to update task completion status");
         }
-        loadTasks(); // Reload tasks to reflect changes
     }
 
     private void deleteSelectedTask() {
-        int row = taskTable.getSelectedRow();
-        if (row >= 0) {
-            String taskName = (String) taskTableModel.getValueAt(row, 1); // Get task name
+        int selectedRow = taskTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            String taskName = (String) taskTableModel.getValueAt(selectedRow, 1); // Get task name
 
-            // Delete the task from the database
+            // Remove from the database
             try (Connection conn = DatabaseConnection.getConnection()) {
-                String deleteQuery = "DELETE FROM Task WHERE task_name = ?";
-                PreparedStatement pstmt = conn.prepareStatement(deleteQuery);
-                pstmt.setString(1, taskName); // Assuming task name is unique
-                pstmt.executeUpdate();
-                System.out.println("Task deleted successfully");
-                taskTableModel.removeRow(row); // Remove from table model
+                String deleteQuery = "DELETE FROM Task WHERE task_name = ? AND user_id = ?";
+                PreparedStatement stmt = conn.prepareStatement(deleteQuery);
+                stmt.setString(1, taskName);
+                stmt.setInt(2, userId);
+                stmt.executeUpdate();
             } catch (SQLException e) {
                 e.printStackTrace();
-                System.out.println("Failed to delete task");
             }
+
+            // Remove from the table
+            taskTableModel.removeRow(selectedRow);
         } else {
-            JOptionPane.showMessageDialog(this, "Please select a task to delete.");
+            JOptionPane.showMessageDialog(this, "Please select a task to delete.", "No Task Selected", JOptionPane.WARNING_MESSAGE);
         }
     }
 
     private void editSelectedTask() {
-        int row = taskTable.getSelectedRow();
-        if (row >= 0) {
-            String taskName = (String) taskTableModel.getValueAt(row, 1);
-            String priority = (String) taskTableModel.getValueAt(row, 2);
-            String endTime = (String) taskTableModel.getValueAt(row, 4);
-            Date endDate = null;
-
-            // Parse endTime string to Date object if it is not empty
-            if (!endTime.isEmpty()) {
-                try {
-                    endDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(endTime);
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            // Open the edit task frame
-            new EditTaskFrame(this, taskName, priority, endDate); // Pass all required parameters
+        int selectedRow = taskTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            String taskName = (String) taskTableModel.getValueAt(selectedRow, 1);
+            new EditTaskFrame(this, taskName, userId); // Pass task name and user ID
         } else {
-            JOptionPane.showMessageDialog(this, "Please select a task to edit.");
+            JOptionPane.showMessageDialog(this, "Please select a task to edit.", "No Task Selected", JOptionPane.WARNING_MESSAGE);
         }
+    }
+
+    private void logout() {
+        // Clear user session and return to login screen
+        dispose(); // Close the dashboard
+        new LoginForm(); // Assuming you have a LoginFrame class
+    }
+
+    public static void main(String[] args) {
+        // Example usage (replace with actual user login mechanism)
+        SwingUtilities.invokeLater(() -> new ToDoListDashboard(1)); // Pass user ID from the login process
     }
 }
