@@ -1,3 +1,9 @@
+package Dashboard;
+
+
+import Database.DatabaseConnection;
+import Auth.LoginForm;
+import Auth.SignupForm;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Cursor;
