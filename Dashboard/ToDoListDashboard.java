@@ -1,324 +1,271 @@
 package Dashboard;
 
-
 import Database.DatabaseConnection;
-import Auth.LoginForm;
-import Auth.SignupForm;
-import java.awt.Color;
-import java.awt.Container;
-import java.awt.Cursor;
-import java.awt.Font;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
+import javax.swing.*;
+import javax.swing.table.*;
+import java.awt.*;
+import java.sql.*;
+import java.text.*;
+import java.util.Date;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JTextField;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.DefaultTableModel;
+import java.util.Arrays;
 
-public class ToDoListDashboard extends JFrame implements ActionListener {
 
-    // Components of the dashboard
-    private Container container;
-    private JLabel titleLabel;
-    private JTextField taskField;
-    private JComboBox<String> priorityComboBox;
-    private JButton addTaskButton;
-    private JButton deleteTaskButton;
-    private JButton updateTaskButton;
-    private JButton markCompletedButton;
-    private JButton sortTaskByPriorityButton;
-    private JButton searchTaskButton;
-    private JButton generateReportButton;
-    private JTextField searchField;
 
-    // Table to display tasks with date
+public class ToDoListDashboard extends JFrame {
     private JTable taskTable;
     private DefaultTableModel taskTableModel;
 
-    // Table for completed tasks
-    private JTable completedTaskTable;
-    private DefaultTableModel completedTableModel;
-
-    // Lists to store tasks and completed tasks
-    private ArrayList<Task> taskList;
-    private ArrayList<CompletedTask> completedTasks;
-
-    // Variable to hold the selected index for updating a task
-    private int selectedIndexForUpdate = -1;
-
-    // Date format
-    private SimpleDateFormat dateFormatter = new SimpleDateFormat("dd/MM/yyyy");
-
-    // Constructor to set up the dashboard
     public ToDoListDashboard() {
         setTitle("To-Do List Dashboard");
-        setBounds(300, 90, 900, 750);
+        setBounds(300, 90, 900, 600);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setResizable(false);
 
-        container = getContentPane();
+        // Create a container with a light background color
+        Container container = getContentPane();
         container.setLayout(null);
+        container.setBackground(Color.WHITE); // Light background
 
-        // Background color for the container
-        container.setBackground(new Color(245, 245, 245));
+        // Initialize table with an additional column for completion
+        String[] columnNames = {"Complete", "Task Name", "Priority", "Create Time", "End Time"};
+        taskTableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                // Set the first column to be a checkbox
+                return (columnIndex == 0) ? Boolean.class : String.class;
+            }
+        };
+        taskTable = new JTable(taskTableModel) {
+            @Override
+            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                boolean completed = (boolean) getValueAt(row, 0); // Check if the task is completed
+                if (completed) {
+                    c.setFont(c.getFont().deriveFont(Font.BOLD | Font.ITALIC)); // Strikethrough style
+                    c.setForeground(Color.GRAY); // Gray text for completed tasks
+                } else {
+                    c.setFont(c.getFont().deriveFont(Font.PLAIN)); // Regular font for incomplete tasks
+                    c.setForeground(Color.BLACK); // Black text for incomplete tasks
+                }
+                return c;
+            }
+        };
+        taskTable.setFont(new Font("Arial", Font.PLAIN, 14));
+        taskTable.setRowHeight(30);
+        taskTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+        taskTable.getTableHeader().setBackground(new Color(230, 230, 230)); // Light gray header
+        taskTable.getTableHeader().setForeground(Color.BLACK); // Black text
 
-        titleLabel = new JLabel("To-Do List");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 36));
-        titleLabel.setSize(300, 40);
-        titleLabel.setLocation(240, 20);
-        titleLabel.setForeground(new Color(60, 60, 60));
-        container.add(titleLabel);
+        JScrollPane scrollPane = new JScrollPane(taskTable);
+        scrollPane.setBounds(50, 70, 800, 400);
+        container.add(scrollPane);
 
-        taskField = new JTextField();
-        taskField.setFont(new Font("Arial", Font.PLAIN, 18));
-        taskField.setSize(250, 30);
-        taskField.setLocation(50, 80);
-        container.add(taskField);
-
-        // Priority ComboBox
-        String[] priorities = {"High", "Medium", "Low"};
-        priorityComboBox = new JComboBox<>(priorities);
-        priorityComboBox.setFont(new Font("Arial", Font.PLAIN, 18));
-        priorityComboBox.setSize(100, 30);
-        priorityComboBox.setLocation(320, 80);
-        container.add(priorityComboBox);
-
-        // Task List setup with table for Task Name, Priority, and Date
-        taskList = new ArrayList<>();
-        String[] columnNames = {"Task", "Priority", "Date"};
-        taskTableModel = new DefaultTableModel(columnNames, 0);
-        taskTable = new JTable(taskTableModel);
-        JScrollPane taskScrollPane = new JScrollPane(taskTable);
-        taskScrollPane.setBounds(50, 130, 480, 270);
-        container.add(taskScrollPane);
-
-        // Button Styling
-        addTaskButton = new JButton("Add Task");
-        styleButton(addTaskButton);
-        addTaskButton.setSize(180, 30);
-        addTaskButton.setLocation(540, 130);
-        addTaskButton.addActionListener(this);
+        // Button to add new task with a modern look
+        JButton addTaskButton = new JButton("Add Task");
+        addTaskButton.setFont(new Font("Arial", Font.BOLD, 14));
+        addTaskButton.setBackground(new Color(76, 175, 80)); // Green color
+        addTaskButton.setForeground(Color.WHITE); // White text
+        addTaskButton.setBorder(BorderFactory.createLineBorder(new Color(67, 160, 71), 2));
+        addTaskButton.setFocusPainted(false);
+        addTaskButton.setBounds(50, 490, 150, 40);
+        addTaskButton.addActionListener(e -> new AddTaskFrame(this));
         container.add(addTaskButton);
 
-        deleteTaskButton = new JButton("Delete Task");
-        styleButton(deleteTaskButton);
-        deleteTaskButton.setSize(180, 30);
-        deleteTaskButton.setLocation(540, 170);
-        deleteTaskButton.addActionListener(this);
+        // Button to delete a task
+        JButton deleteTaskButton = new JButton("Delete Task");
+        deleteTaskButton.setFont(new Font("Arial", Font.BOLD, 14));
+        deleteTaskButton.setBackground(new Color(244, 67, 54)); // Red color
+        deleteTaskButton.setForeground(Color.WHITE); // White text
+        deleteTaskButton.setBorder(BorderFactory.createLineBorder(new Color(229, 57, 53), 2));
+        deleteTaskButton.setFocusPainted(false);
+        deleteTaskButton.setBounds(220, 490, 150, 40);
+        deleteTaskButton.addActionListener(e -> deleteSelectedTask());
         container.add(deleteTaskButton);
 
-        updateTaskButton = new JButton("Update Task");
-        styleButton(updateTaskButton);
-        updateTaskButton.setSize(180, 30);
-        updateTaskButton.setLocation(540, 210);
-        updateTaskButton.addActionListener(this);
-        container.add(updateTaskButton);
+        // Button to edit a task
+        JButton editTaskButton = new JButton("Edit Task");
+        editTaskButton.setFont(new Font("Arial", Font.BOLD, 14));
+        editTaskButton.setBackground(new Color(33, 150, 243)); // Blue color
+        editTaskButton.setForeground(Color.WHITE); // White text
+        editTaskButton.setBorder(BorderFactory.createLineBorder(new Color(30, 136, 229), 2));
+        editTaskButton.setFocusPainted(false);
+        editTaskButton.setBounds(400, 490, 150, 40);
+        editTaskButton.addActionListener(e -> editSelectedTask());
+        container.add(editTaskButton);
 
-        markCompletedButton = new JButton("Mark as Completed");
-        styleButton(markCompletedButton);
-        markCompletedButton.setSize(180, 30);
-        markCompletedButton.setLocation(540, 250);
-        markCompletedButton.addActionListener(this);
-        container.add(markCompletedButton);
+        // Label to show the title
+        JLabel titleLabel = new JLabel("Your Tasks");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setBounds(350, 20, 200, 30);
+        titleLabel.setForeground(new Color(33, 37, 41)); // Dark color
+        container.add(titleLabel);
 
-        sortTaskByPriorityButton = new JButton("Sort by Priority");
-        styleButton(sortTaskByPriorityButton);
-        sortTaskByPriorityButton.setSize(180, 30);
-        sortTaskByPriorityButton.setLocation(540, 290);
-        sortTaskByPriorityButton.addActionListener(this);
-        container.add(sortTaskByPriorityButton);
+        // Load tasks from the database
+        loadTasks();
 
-        searchField = new JTextField();
-        searchField.setFont(new Font("Arial", Font.PLAIN, 18));
-        searchField.setSize(250, 30);
-        searchField.setLocation(540, 340);
-        container.add(searchField);
+        // Add checkbox listener to toggle completion
+        taskTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                int row = taskTable.getSelectedRow();
+                if (row >= 0 && evt.getClickCount() == 2) { // Double-click to toggle completion
+                    boolean currentValue = (boolean) taskTableModel.getValueAt(row, 0);
+                    taskTableModel.setValueAt(!currentValue, row, 0); // Toggle checkbox
 
-        searchTaskButton = new JButton("Search Task");
-        styleButton(searchTaskButton);
-        searchTaskButton.setSize(180, 30);
-        searchTaskButton.setLocation(540, 380);
-        searchTaskButton.addActionListener(this);
-        container.add(searchTaskButton);
-
-        // Generate Report Button
-        generateReportButton = new JButton("Generate Report");
-        styleButton(generateReportButton);
-        generateReportButton.setSize(180, 30);
-        generateReportButton.setLocation(540, 420);
-        generateReportButton.addActionListener(this);
-        container.add(generateReportButton);
-
-        // Completed Task Table setup with Task Name and Completion Date
-        completedTasks = new ArrayList<>();
-        String[] completedColumnNames = {"Completed Tasks", "Completion Date"};
-        completedTableModel = new DefaultTableModel(completedColumnNames, 0);
-        completedTaskTable = new JTable(completedTableModel);
-        JScrollPane completedScrollPane = new JScrollPane(completedTaskTable);
-        completedScrollPane.setBounds(50, 420, 480, 100);
-        container.add(completedScrollPane);
+                    // Update the database for this task
+                    updateTaskCompletion(row, !currentValue);
+                }
+            }
+        });
 
         setVisible(true);
     }
 
-    // Method to style the buttons uniformly
-    private void styleButton(JButton button) {
-        button.setFont(new Font("Arial", Font.PLAIN, 16));
-        button.setBackground(new Color(72, 118, 255));
-        button.setForeground(Color.WHITE);
-        button.setFocusPainted(false);
-        button.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    public void loadTasks() {
+        taskTableModel.setRowCount(0);  // Clear table before reloading
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            // Select all tasks
+            String query = "SELECT * FROM Task";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            ResultSet rs = stmt.executeQuery();
+    
+            // Store tasks in a list for sorting
+            List<Task> tasks = new ArrayList<>();
+    
+            while (rs.next()) {
+                String taskName = rs.getString("task_name");
+                String priority = rs.getString("priority");
+                String createTime = rs.getString("create_time");
+                String endTime = rs.getString("end_time");
+                boolean completed = rs.getBoolean("completed");
+    
+                // Add the task to the list
+                tasks.add(new Task(taskName, priority, createTime, endTime, completed));
+            }
+    
+            // Sort tasks to place completed tasks below incomplete tasks
+            Collections.sort(tasks, (t1, t2) -> {
+                if (t1.isCompleted() && !t2.isCompleted()) return 1; // t1 comes after t2
+                if (!t1.isCompleted() && t2.isCompleted()) return -1; // t1 comes before t2
+    
+                // Sort by priority
+                int priorityComparison = comparePriority(t1.getPriority(), t2.getPriority());
+                if (priorityComparison != 0) return priorityComparison;
+    
+                // Sort by end time
+                return t1.getEndTime().compareTo(t2.getEndTime());
+            });
+    
+            // Add sorted tasks to the table model
+            for (Task task : tasks) {
+                taskTableModel.addRow(new Object[]{
+                    task.isCompleted(),
+                    task.getTaskName(),
+                    task.getPriority(),
+                    task.getCreateTime(),
+                    task.isCompleted() ? "" : task.getEndTime()
+                });
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    
+    private int comparePriority(String priority1, String priority2) {
+        String[] priorities = {"High", "Medium", "Low"};
+        int index1 = Arrays.asList(priorities).indexOf(priority1);
+        int index2 = Arrays.asList(priorities).indexOf(priority2);
+        return Integer.compare(index1, index2);
+    }
+    
+
+    private void updateTaskCompletion(int row, boolean completed) {
+        String taskName = (String) taskTableModel.getValueAt(row, 1); // Get task name
+
+        // Update the database for this task
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            String updateQuery = "UPDATE Task SET completed = ? WHERE task_name = ?";
+            PreparedStatement pstmt = conn.prepareStatement(updateQuery);
+            pstmt.setBoolean(1, completed);
+            pstmt.setString(2, taskName); // Assuming task name is unique
+            pstmt.executeUpdate();
+            System.out.println("Task completion status updated successfully");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("Failed to update task completion status");
+        }
+        loadTasks(); // Reload tasks to reflect changes
     }
 
-    // Task class to store task name, priority, and date
-    private class Task {
-        String taskName;
-        String priority;
-        String date;
+    private void deleteSelectedTask() {
+        int row = taskTable.getSelectedRow();
+        if (row >= 0) {
+            String taskName = (String) taskTableModel.getValueAt(row, 1); // Get task name
 
-        Task(String taskName, String priority, String date) {
-            this.taskName = taskName;
-            this.priority = priority;
-            this.date = date;
+            // Delete the task from the database
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                String deleteQuery = "DELETE FROM Task WHERE task_name = ?";
+                PreparedStatement pstmt = conn.prepareStatement(deleteQuery);
+                pstmt.setString(1, taskName); // Assuming task name is unique
+                pstmt.executeUpdate();
+                System.out.println("Task deleted successfully");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                System.out.println("Failed to delete task");
+            }
+
+            loadTasks(); // Reload tasks to reflect changes
+        } else {
+            JOptionPane.showMessageDialog(this, "Please select a task to delete.");
         }
     }
 
-    // CompletedTask class to store completed task name and completion date
-    private class CompletedTask {
-        String taskName;
-        String completionDate;
-
-        CompletedTask(String taskName, String completionDate) {
-            this.taskName = taskName;
-            this.completionDate = completionDate;
-        }
-    }
-
-    // Action handler for buttons
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == addTaskButton) {
-            String taskName = taskField.getText().trim();
-            String priority = (String) priorityComboBox.getSelectedItem();
-            String date = dateFormatter.format(new Date());
-
-            // Check for empty task name
-            if (taskName.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Task cannot be empty", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Check for duplicate task
-            boolean isDuplicate = taskList.stream()
-                .anyMatch(task -> task.taskName.equalsIgnoreCase(taskName));
-
-            if (isDuplicate) {
-                JOptionPane.showMessageDialog(this, "Task already exists!", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            // Add task if no duplicates found
-            Task task = new Task(taskName, priority, date);
-            taskList.add(task);
-            taskTableModel.addRow(new Object[]{taskName, priority, date});
-            taskField.setText("");  // Clear the input field after adding the task
-        } else if (e.getSource() == deleteTaskButton) {
-            int selectedRow = taskTable.getSelectedRow();
-            if (selectedRow != -1) {
-                taskList.remove(selectedRow);
-                taskTableModel.removeRow(selectedRow);
-            } else {
-                JOptionPane.showMessageDialog(this, "Please select a task to delete", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (e.getSource() == updateTaskButton) {
-            selectedIndexForUpdate = taskTable.getSelectedRow();
-            if (selectedIndexForUpdate != -1) {
-                Task selectedTask = taskList.get(selectedIndexForUpdate);
-                taskField.setText(selectedTask.taskName); // Set selected task for updating
-            } else {
-                JOptionPane.showMessageDialog(this, "Please select a task to update", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (e.getSource() == markCompletedButton) {
-            int selectedRow = taskTable.getSelectedRow();
-            if (selectedRow != -1) {
-                // Mark the task as completed
-                Task completedTask = taskList.remove(selectedRow);
-                taskTableModel.removeRow(selectedRow);
-
-                // Add task to completed list
-                String completionDate = dateFormatter.format(new Date());
-                CompletedTask task = new CompletedTask(completedTask.taskName, completionDate);
-                completedTasks.add(task);
-                completedTableModel.addRow(new Object[]{task.taskName, task.completionDate});
-
-                JOptionPane.showMessageDialog(this, "Task marked as completed!", "Success", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, "Please select a task to mark as completed", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (e.getSource() == sortTaskByPriorityButton) {
-            Collections.sort(taskList, Comparator.comparingInt(task -> {
-                switch (task.priority) {
-                    case "High": return 1;
-                    case "Medium": return 2;
-                    case "Low": return 3;
-                    default: return 4;
+    private void editSelectedTask() {
+        int row = taskTable.getSelectedRow();
+        if (row >= 0) {
+            String taskName = (String) taskTableModel.getValueAt(row, 1);
+            String priority = (String) taskTableModel.getValueAt(row, 2);
+            String endTime = (String) taskTableModel.getValueAt(row, 4);
+            Date endDate = null;
+    
+            // Parse endTime string to Date object if it is not empty
+            if (!endTime.isEmpty()) {
+                try {
+                    endDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(endTime);
+                } catch (ParseException e) {
+                    e.printStackTrace();
                 }
-            }));
-            taskTableModel.setRowCount(0);  // Clear the table
-            for (Task task : taskList) {
-                taskTableModel.addRow(new Object[]{task.taskName, task.priority, task.date});
             }
-        } else if (e.getSource() == searchTaskButton) {
-            String searchText = searchField.getText().trim();
-            taskTableModel.setRowCount(0);  // Clear the table
-            for (Task task : taskList) {
-                if (task.taskName.toLowerCase().contains(searchText.toLowerCase())) {
-                    taskTableModel.addRow(new Object[]{task.taskName, task.priority, task.date});
-                }
-            }
-        } else if (e.getSource() == generateReportButton) {
-            generateReport();
+            
+            new EditTaskFrame(this, taskName, priority, endDate); // Pass all required parameters
+        } else {
+            JOptionPane.showMessageDialog(this, "Please select a task to edit.");
         }
     }
+    
 
-    // Method to generate a report of completed tasks
-    private void generateReport() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files", "txt"));
-        int userSelection = fileChooser.showSaveDialog(this);
-        if (userSelection == JFileChooser.APPROVE_OPTION) {
-            File fileToSave = fileChooser.getSelectedFile();
-            try (FileWriter writer = new FileWriter(fileToSave)) {
-                writer.write("Completed Tasks Report\n");
-                writer.write("-----------------------\n");
-                for (CompletedTask task : completedTasks) {
-                    writer.write(task.taskName + " - " + task.completionDate + "\n");
-                }
-                JOptionPane.showMessageDialog(this, "Report generated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(this, "Error saving report: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
+    public void addTask(String taskName, String priority, String endTime) {
+        // Add task to the database
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            String insertQuery = "INSERT INTO Task (task_name, priority, create_time, end_time, completed) VALUES (?, ?, ?, ?, ?)";
+            PreparedStatement pstmt = conn.prepareStatement(insertQuery);
+            pstmt.setString(1, taskName);
+            pstmt.setString(2, priority);
+            pstmt.setString(3, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())); // Current time
+            pstmt.setString(4, endTime);
+            pstmt.setBoolean(5, false); // Default to not completed
+            pstmt.executeUpdate();
+            System.out.println("Task added successfully");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("Failed to add task");
         }
+        loadTasks(); // Reload tasks to reflect new addition
     }
 
-    // Main method to run the application
     public static void main(String[] args) {
         new ToDoListDashboard();
     }
