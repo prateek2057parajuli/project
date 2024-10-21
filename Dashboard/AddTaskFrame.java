@@ -27,9 +27,12 @@ public class AddTaskFrame extends JFrame implements ActionListener {
     private JButton addButton;
     private JButton cancelButton;
     private ToDoListDashboard dashboard;
+    private int userId; // Store user ID
 
-    public AddTaskFrame(ToDoListDashboard dashboard) {
+    // Modified constructor to accept userId
+    public AddTaskFrame(ToDoListDashboard dashboard, int userId) {
         this.dashboard = dashboard;
+        this.userId = userId; // Store the user ID
 
         setTitle("Add Task");
         setBounds(300, 90, 500, 450);
@@ -133,12 +136,13 @@ public class AddTaskFrame extends JFrame implements ActionListener {
             String formattedEndTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(endDate);
             
             try (Connection conn = DatabaseConnection.getConnection()) {
-                String query = "INSERT INTO Task (task_name, priority, create_time, end_time) VALUES (?, ?, ?, ?)";
+                String query = "INSERT INTO Task (task_name, priority, create_time, end_time, user_id) VALUES (?, ?, ?, ?, ?)";
                 PreparedStatement stmt = conn.prepareStatement(query);
                 stmt.setString(1, taskName);
                 stmt.setString(2, priority);
                 stmt.setString(3, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
                 stmt.setString(4, formattedEndTime);
+                stmt.setInt(5, userId); // Use the user ID
 
                 stmt.executeUpdate();
                 JOptionPane.showMessageDialog(this, "Task added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
