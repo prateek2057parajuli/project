@@ -1,5 +1,6 @@
+package Auth;
 import Database.DatabaseConnection;
-
+import Dashboard.ToDoListDashboard;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
@@ -14,6 +15,7 @@ public class LoginForm extends JFrame implements ActionListener {
     private JTextField nameField;
     private JLabel passwordLabel;
     private JPasswordField passwordField;
+    private JCheckBox showPasswordCheckBox;  // Checkbox to show/hide password
     private JButton loginButton, signupButton;
 
     public LoginForm() {
@@ -58,6 +60,24 @@ public class LoginForm extends JFrame implements ActionListener {
         passwordField.setLocation(180, 150);
         passwordField.setBorder(new LineBorder(new Color(120, 144, 156), 2)); // Soft border color
         container.add(passwordField);
+
+        // Show password checkbox
+        showPasswordCheckBox = new JCheckBox("Show Password");
+        showPasswordCheckBox.setFont(new Font("Verdana", Font.PLAIN, 12));
+        showPasswordCheckBox.setSize(150, 20);
+        showPasswordCheckBox.setLocation(180, 190);
+        showPasswordCheckBox.setBackground(new Color(224, 224, 224));
+        showPasswordCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (showPasswordCheckBox.isSelected()) {
+                    passwordField.setEchoChar((char) 0);  // Show password
+                } else {
+                    passwordField.setEchoChar('*');  // Hide password
+                }
+            }
+        });
+        container.add(showPasswordCheckBox);
 
         // Login button with style
         loginButton = new JButton("Login");

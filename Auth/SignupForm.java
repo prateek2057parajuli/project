@@ -1,10 +1,10 @@
+package Auth;
 import Database.DatabaseConnection;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
 import javax.swing.*;
 import javax.swing.border.*;
-
 
 public class SignupForm extends JFrame implements ActionListener {
 
@@ -16,6 +16,7 @@ public class SignupForm extends JFrame implements ActionListener {
     private JPasswordField passwordField;
     private JLabel emailLabel;
     private JTextField emailField;
+    private JCheckBox showPasswordCheckBox; // Checkbox to show/hide password
     private JButton signupButton;
     private JButton loginButton;
 
@@ -27,9 +28,7 @@ public class SignupForm extends JFrame implements ActionListener {
 
         container = getContentPane();
         container.setLayout(null);
-
-        // Background color
-        container.setBackground(new Color(224, 224, 224));
+        container.setBackground(new Color(224, 224, 224)); // Background color
 
         title = new JLabel("Signup Form");
         title.setFont(new Font("Verdana", Font.BOLD, 30));
@@ -64,16 +63,33 @@ public class SignupForm extends JFrame implements ActionListener {
         passwordField.setBorder(new LineBorder(new Color(120, 144, 156), 2));
         container.add(passwordField);
 
+        // Checkbox to show/hide password
+        showPasswordCheckBox = new JCheckBox("Show Password");
+        showPasswordCheckBox.setFont(new Font("Verdana", Font.PLAIN, 12));
+        showPasswordCheckBox.setSize(150, 30);
+        showPasswordCheckBox.setLocation(180, 185);
+        showPasswordCheckBox.setBackground(new Color(224, 224, 224)); // Match background color
+        showPasswordCheckBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (showPasswordCheckBox.isSelected()) {
+                    passwordField.setEchoChar((char) 0); // Show password
+                } else {
+                    passwordField.setEchoChar('*'); // Hide password
+                }
+            }
+        });
+        container.add(showPasswordCheckBox);
+
         emailLabel = new JLabel("Email:");
         emailLabel.setFont(new Font("Verdana", Font.PLAIN, 18));
         emailLabel.setSize(120, 30);
-        emailLabel.setLocation(50, 200);
+        emailLabel.setLocation(50, 230);
         container.add(emailLabel);
 
         emailField = new JTextField();
         emailField.setFont(new Font("Verdana", Font.PLAIN, 15));
         emailField.setSize(250, 30);
-        emailField.setLocation(180, 200);
+        emailField.setLocation(180, 230);
         emailField.setBorder(new LineBorder(new Color(120, 144, 156), 2));
         container.add(emailField);
 
@@ -181,6 +197,8 @@ public class SignupForm extends JFrame implements ActionListener {
 
             if (rowAffected > 0) {
                 JOptionPane.showMessageDialog(this, "Signup Successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                new LoginForm(); // Assuming you have a LoginForm class
+                dispose(); // Close the signup form
             } else {
                 JOptionPane.showMessageDialog(this, "Signup Failed!", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -194,4 +212,5 @@ public class SignupForm extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(this, "Database Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
 }
