@@ -1,9 +1,6 @@
 package Dashboard;
 
 import Database.DatabaseConnection;
-
-import javax.swing.*;
-import javax.swing.border.LineBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -12,7 +9,8 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import javax.swing.SpinnerDateModel;
+import javax.swing.*;
+import javax.swing.border.LineBorder;
 
 public class EditTaskFrame extends JFrame implements ActionListener {
 
@@ -28,11 +26,13 @@ public class EditTaskFrame extends JFrame implements ActionListener {
     private JButton cancelButton;
     private ToDoListDashboard dashboard;
     private String originalTaskName;
+    private int userId;
 
-    public EditTaskFrame(ToDoListDashboard dashboard, String taskName, String priority, Date endTime) {
+    public EditTaskFrame(ToDoListDashboard dashboard,int userId, String taskName, String priority, String endTime) {
         this.dashboard = dashboard;
         this.originalTaskName = taskName;
-
+        this.userId = userId;
+    
         setTitle("Edit Task");
         setBounds(300, 90, 500, 450);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -82,7 +82,16 @@ public class EditTaskFrame extends JFrame implements ActionListener {
         endTimeLabel.setLocation(50, 200);
         container.add(endTimeLabel);
 
-        SpinnerDateModel model = new SpinnerDateModel(endTime, null, null, java.util.Calendar.HOUR_OF_DAY);
+        
+        // Convert endTime (String) to Date for the SpinnerDateModel
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date parsedEndTime = null;
+        try {
+            parsedEndTime = dateFormat.parse(endTime);
+        } catch (Exception ex) {
+            System.out.println("Error parsing date: " + ex.getMessage());
+        }
+        SpinnerDateModel model = new SpinnerDateModel(parsedEndTime, null, null, java.util.Calendar.HOUR_OF_DAY);
         endTimeSpinner = new JSpinner(model);
         JSpinner.DateEditor editor = new JSpinner.DateEditor(endTimeSpinner, "yyyy-MM-dd HH:mm:ss");
         endTimeSpinner.setEditor(editor);
@@ -120,26 +129,25 @@ public class EditTaskFrame extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == updateButton) {
-            String newTaskName = taskNameField.getText().trim();
-            String priority = (String) priorityComboBox.getSelectedItem();
-            Date endDate = (Date) endTimeSpinner.getValue();
+            String newTaskName = taskNameField.getText();
+            String newPriority = (String) priorityComboBox.getSelectedItem();
+            String newEndTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(endTimeSpinner.getValue());
 
-            if (newTaskName.isEmpty() || endDate == null) {
+            if (newTaskName.isEmpty() || newEndTime == null) {
                 JOptionPane.showMessageDialog(this, "Task name and end time cannot be empty", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
-            String formattedEndTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(endDate);
-            
             try (Connection conn = DatabaseConnection.getConnection()) {
-                String query = "UPDATE Task SET task_name = ?, priority = ?, end_time = ? WHERE task_name = ?";
+                String query = "UPDATE Task SET task_name = ?, priority = ?, end_time = ? WHERE user_id = ? AND task_name = ?";
                 PreparedStatement stmt = conn.prepareStatement(query);
                 stmt.setString(1, newTaskName);
-                stmt.setString(2, priority);
-                stmt.setString(3, formattedEndTime);
-                stmt.setString(4, originalTaskName);
-
+                stmt.setString(2, newPriority);
+                stmt.setString(3, newEndTime);
+                stmt.setInt(4, userId);
+                stmt.setString(5, originalTaskName);
                 stmt.executeUpdate();
+            
+    
                 JOptionPane.showMessageDialog(this, "Task updated successfully", "Success", JOptionPane.INFORMATION_MESSAGE);
                 dashboard.loadTasks(); // Refresh the task list
                 dispose();
