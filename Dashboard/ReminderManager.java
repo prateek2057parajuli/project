@@ -1,71 +1,34 @@
-package Dashboard;
-
-import Database.DatabaseConnection;
-
-import java.awt.*;
-import java.sql.*;
+import javax.swing.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class ReminderManager {
-    private TrayIcon trayIcon;
+    private static Timer reminderTimer = new Timer();
 
-    public ReminderManager() {
-        // Initialize the system tray icon for notifications
-        if (SystemTray.isSupported()) {
-            SystemTray tray = SystemTray.getSystemTray();
-            Image image = Toolkit.getDefaultToolkit().createImage("resources/icon.png"); // Path to your icon
-            trayIcon = new TrayIcon(image, "Task Reminder");
-            trayIcon.setImageAutoSize(true);
-            try {
-                tray.add(trayIcon);
-            } catch (AWTException e) {
-                System.err.println("TrayIcon could not be added.");
-            }
-        } else {
-            System.out.println("System tray not supported.");
+    // Schedule a reminder for a specific task
+    public static void scheduleReminder(String taskName, Date endTime) {
+        if (endTime == null) return;
+
+        // Calculate the delay from the current time to the task end time
+        long delay = endTime.getTime() - System.currentTimeMillis();
+        if (delay <= 0) {
+            return; // If the task's end time is in the past, no reminder needed
         }
 
-        // Start checking for overdue tasks
-        startReminderCheck();
-    }
-
-    private void startReminderCheck() {
-        Timer timer = new Timer(true);
-        timer.scheduleAtFixedRate(new TimerTask() {
+        reminderTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                checkForOverdueTasks();
+                // Show a reminder message
+                JOptionPane.showMessageDialog(null, "Reminder: Task \"" + taskName + "\" is due!", "Task Reminder", JOptionPane.WARNING_MESSAGE);
             }
-        }, 0, 60000); // Check every 60 seconds
+        }, delay);
     }
 
-    private void checkForOverdueTasks() {
-        try {
-            Connection connection = DatabaseConnection.getConnection();
-            String query = "SELECT task_name, due_date FROM tasks WHERE completed = false AND due_date < NOW()";
-            PreparedStatement statement = connection.prepareStatement(query);
-            ResultSet resultSet = statement.executeQuery();
-
-            while (resultSet.next()) {
-                String taskName = resultSet.getString("task_name");
-                Timestamp dueDate = resultSet.getTimestamp("due_date");
-
-                // Trigger the reminder notification
-                showReminderNotification(taskName, dueDate);
-            }
-
-            statement.close();
-            connection.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void showReminderNotification(String taskName, Timestamp dueDate) {
-        if (trayIcon != null) {
-            String message = "Task '" + taskName + "' is overdue! (Due: " + dueDate + ")";
-            trayIcon.displayMessage("Task Reminder", message, TrayIcon.MessageType.WARNING);
-        }
+    // Cancel all scheduled reminders
+    public static void cancelReminders() {
+        reminderTimer.cancel();
+        reminderTimer = new Timer(); // Reset the timer for future use
     }
 }
