@@ -1,17 +1,17 @@
 package Dashboard;
 
-import Database.DatabaseConnection;
 import Auth.LoginForm;
-import javax.swing.*;
-import javax.swing.table.*;
+import Database.DatabaseConnection;
 import java.awt.*;
 import java.sql.*;
 import java.text.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Arrays;
+import javax.swing.*;
+import javax.swing.table.*;
 
 public class ToDoListDashboard extends JFrame {
     private JTable taskTable;
@@ -236,19 +236,20 @@ public class ToDoListDashboard extends JFrame {
         }
     }
 
-    private void editSelectedTask() {
+    public void editSelectedTask() {
         int selectedRow = taskTable.getSelectedRow();
         if (selectedRow >= 0) {
-            String taskName = (String) taskTableModel.getValueAt(selectedRow, 0);
-            String priority = (String) taskTableModel.getValueAt(selectedRow, 1);
-            Date endTime = (Date) taskTableModel.getValueAt(selectedRow, 3);
-            
-            // Pass the required parameters to EditTaskFrame
-            new EditTaskFrame(this, taskName, priority, endTime); // Adjusted this line
+            String taskName = (String) taskTableModel.getValueAt(selectedRow, 1);
+            String priority = (String) taskTableModel.getValueAt(selectedRow, 2);
+            String endTime = (String) taskTableModel.getValueAt(selectedRow, 4);
+    
+            // Open the EditTaskFrame and pass the selected task details
+            new EditTaskFrame(this, userId, taskName, priority, endTime);
         } else {
             JOptionPane.showMessageDialog(this, "Please select a task to edit.", "No Task Selected", JOptionPane.WARNING_MESSAGE);
         }
     }
+    
     
     private void updateTaskCompletion(int row, boolean completed) {
         String taskName = (String) taskTableModel.getValueAt(row, 1);
