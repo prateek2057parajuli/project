@@ -21,7 +21,7 @@ A Java-based desktop application for managing tasks, allowing users to add, edit
 - Run the Server and Database in your Local Machine.
 - Create a Database name with `taskmanager`;
 ```sql
-CREATE DATABASE BillingSystem;
+CREATE DATABASE taskmanager;
 ```
 - Execute all the Command of `/Database/taskmanager.sql` from `localhost/phpmyadmin`
 
