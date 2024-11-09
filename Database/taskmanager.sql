@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 21, 2024 at 06:22 PM
+-- Generation Time: Oct 25, 2024 at 08:19 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `todo`
+-- Database: `taskmanager`
 --
 
 -- --------------------------------------------------------
@@ -37,18 +37,6 @@ CREATE TABLE `Task` (
   `completed` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `Task`
---
-
-INSERT INTO `Task` (`task_id`, `user_id`, `task_name`, `priority`, `create_time`, `end_time`, `completed`) VALUES
-(1, 1, 'Task One', 'Medium', '2024-10-21 16:15:42', '2024-10-21 22:00:36', 1),
-(2, 1, 'Task Two', 'Low', '2024-10-21 16:15:50', '2024-10-21 22:00:45', 1),
-(3, 1, 'task 3', 'High', '2024-10-21 16:16:05', '2024-10-21 22:01:01', 1),
-(4, 2, 'asdfasdf', 'High', '2024-10-21 16:17:59', '2024-10-21 22:02:57', 1),
-(5, 2, 'asdfasdfasf', 'High', '2024-10-21 16:18:02', '2024-10-21 22:03:01', 0),
-(6, 2, 'sdfasdfasdfasdf', 'High', '2024-10-21 16:18:05', '2024-10-21 22:03:04', 1);
-
 -- --------------------------------------------------------
 
 --
@@ -62,14 +50,6 @@ CREATE TABLE `Users` (
   `email` varchar(100) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `Users`
---
-
-INSERT INTO `Users` (`user_id`, `username`, `password`, `email`, `created_at`) VALUES
-(1, 'santoshvandari', 'Santosh1@1', 'santosh@gmail.com', '2024-10-21 16:13:18'),
-(2, 'temp', 'Temporary1@', 'temp@gmail.com', '2024-10-21 16:15:23');
 
 --
 -- Indexes for dumped tables
@@ -98,7 +78,7 @@ ALTER TABLE `Users`
 -- AUTO_INCREMENT for table `Task`
 --
 ALTER TABLE `Task`
-  MODIFY `task_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `task_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `Users`

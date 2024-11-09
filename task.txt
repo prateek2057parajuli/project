@@ -1,3 +1,0 @@
-- Create the only logged in user data is shown. 
-- Only the respected user data is shown. 
-- Create the logout button. 
